@@ -6,10 +6,13 @@ __pycache__/
 # C extensions
 *.so
 
-# folders
+# supporting folders
 data/
 experiment/
 result/
+
+#supporting mialing function
+Mail.py
 
 # Distribution / packaging
 .Python
