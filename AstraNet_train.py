@@ -5,7 +5,7 @@ def AstraNet_run(**training_config):
     os.environ["PATH"] += os.pathsep + r"C:\Program Files\Graphviz\bin"
     import numpy as np
     import json
-    import visualkeras
+    # import visualkeras
     from Mail import sendmailqq
     from keras.optimizers import Adam
     from keras.utils import plot_model

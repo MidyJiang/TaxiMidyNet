@@ -1,12 +1,13 @@
-pydot
-matplotlib
-visualkeras
-pandas
-scikit-learn
-graphviz
-pydotplus
+pydot==4.0.1
+matplotlib==3.10.9
+#visualkeras==0.2.0
+pandas==2.3.3
+scikit-learn==1.7.2
+graphviz==0.21
+pydotplus==2.0.2
 
 
-tensorflow==
-pytorch==
-keras==
+tensorflow==2.21.0
+pytorch==2.13.0+cu126
+keras==2.10.0
+tensorflow-directml-plugin==
