@@ -2,7 +2,8 @@ import keras
 import numpy as np
 import tensorflow as tf
 from keras import backend as K
-from keras.engine.topology import Layer
+# from keras.engine.topology import Layer #depreciated
+from tensorflow.keras.layers import Layer
 from keras.layers import (
     Input,
     Activation,
@@ -10,11 +11,20 @@ from keras.layers import (
     Reshape,
     Concatenate
 )
-from keras.layers.convolutional import Conv3D
-from keras.layers.convolutional import Convolution2D
-from keras.layers.normalization import BatchNormalization
+# from keras.layers.convolutional import Conv3D                  #depreciated
+# from keras.layers.convolutional import Convolution2D           #depreciated
+# from keras.layers.normalization import BatchNormalization      #depreciated
+from tensorflow.keras.layers import Conv3D
+from tensorflow.keras.layers import Conv2D  # Convolution2D 改为 Conv2D
+from tensorflow.keras.layers import BatchNormalization
 from keras.models import Model
 
+# import sys
+# from tensorflow.keras import layers
+
+# 创建兼容性模块
+# sys.modules['keras.engine'] = type(sys.modules)('keras.engine')
+# sys.modules['keras.engine.topology'] = layers
 K.set_image_data_format('channels_first')
 
 
@@ -113,8 +123,8 @@ def _bn_relu_conv(nb_filter, nb_row, nb_col, subsample=(1, 1), bn=False):
         if bn:
             input = BatchNormalization(mode=0, axis=1)(input)
         activation = Activation('relu')(input)
-        return Convolution2D(nb_filter=nb_filter, nb_row=nb_row, nb_col=nb_col, subsample=subsample,
-                             border_mode="same")(activation)
+        return Conv2D(nb_filter=nb_filter, nb_row=nb_row, nb_col=nb_col, subsample=subsample,
+                      padding="same")(activation)
 
     return f
 
@@ -152,7 +162,7 @@ def ftd4(x): return x[:, 18:24, :, :, :]
 def ftd5(x): return x[:, 24:30, :, :, :]
 
 
-def MidyNet(c_conf=(6, 2, 14, 30), p_conf=(6, 2, 14, 30), t_conf=(4, 2, 14, 30), external_dim=17, nb_residual_unit=4):
+def AstraNet(c_conf=(6, 2, 14, 30), p_conf=(6, 2, 14, 30), t_conf=(4, 2, 14, 30), external_dim=17, nb_residual_unit=4):
     # ST3DNet(c_conf=c_conf, p_conf=p_conf, t_conf=t_conf, external_dim=external_dim, nb_residual_unit=nb_residual_unit)
     len_closeness, nb_flow, map_height, map_width = c_conf  # if not c_conf else None
     len_period = p_conf[0] if p_conf else 0
@@ -183,56 +193,38 @@ def MidyNet(c_conf=(6, 2, 14, 30), p_conf=(6, 2, 14, 30), t_conf=(4, 2, 14, 30),
         conv_4 = keras.layers.Lambda(ftd4)(conv1)
         conv_5 = keras.layers.Lambda(ftd5)(conv1)
 
-        #
-        conv21 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same",
-                        dilation_rate=(1, 1, 1),
-                        kernel_initializer='random_uniform')(conv_1)
+        conv21 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same", dilation_rate=(1, 1, 1), kernel_initializer='random_uniform')(conv_1)
         conv21 = Activation("relu")(conv21)
 
-        conv21 = Conv3D(filters=6, kernel_size=(2, 1, 1), strides=(1, 1, 1), padding="same",
-                        kernel_initializer='random_uniform')(conv21)
+        conv21 = Conv3D(filters=6, kernel_size=(2, 1, 1), strides=(1, 1, 1), padding="same", kernel_initializer='random_uniform')(conv21)
         # conv21 = Activation("relu")(conv21)
 
-        conv22 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same",
-                        dilation_rate=(1, 2, 2),
-                        kernel_initializer='random_uniform')(conv_2)
+        conv22 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same", dilation_rate=(1, 2, 2), kernel_initializer='random_uniform')(conv_2)
         conv22 = Activation("relu")(conv22)
 
-        conv22 = Conv3D(filters=6, kernel_size=(2, 1, 1), strides=(1, 1, 1), padding="same",
-                        kernel_initializer='random_uniform')(conv22)
+        conv22 = Conv3D(filters=6, kernel_size=(2, 1, 1), strides=(1, 1, 1), padding="same", kernel_initializer='random_uniform')(conv22)
         # conv22 = Activation("relu")(conv22)
-        conv23 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same",
-                        dilation_rate=(1, 3, 3),
-                        kernel_initializer='random_uniform')(conv_3)
+        conv23 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same", dilation_rate=(1, 3, 3), kernel_initializer='random_uniform')(conv_3)
         conv23 = Activation("relu")(conv23)
 
-        conv23 = Conv3D(filters=6, kernel_size=(2, 1, 1), strides=(1, 1, 1), padding="same",
-
-                        kernel_initializer='random_uniform')(conv23)
+        conv23 = Conv3D(filters=6, kernel_size=(2, 1, 1), strides=(1, 1, 1), padding="same", kernel_initializer='random_uniform')(conv23)
         # conv23 = Activation("relu")(conv23)
 
-        conv24 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same",
-                        dilation_rate=(1, 4, 4),
-                        kernel_initializer='random_uniform')(conv_4)
+        conv24 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same", dilation_rate=(1, 4, 4), kernel_initializer='random_uniform')(conv_4)
         conv24 = Activation("relu")(conv24)
-        #
-        conv24 = Conv3D(filters=6, kernel_size=(3, 1, 1), strides=(1, 1, 1), padding="same",
-                        kernel_initializer='random_uniform')(conv24)
+
+        conv24 = Conv3D(filters=6, kernel_size=(3, 1, 1), strides=(1, 1, 1), padding="same", kernel_initializer='random_uniform')(conv24)
         # conv24 = Activation("relu")(conv24)
 
-        conv25 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same",
-                        dilation_rate=(1, 5, 5),
-                        kernel_initializer='random_uniform')(conv_5)
+        conv25 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same", dilation_rate=(1, 5, 5), kernel_initializer='random_uniform')(conv_5)
         conv25 = Activation("relu")(conv25)
-        #
-        conv25 = Conv3D(filters=8, kernel_size=(3, 1, 1), strides=(1, 1, 1), padding="same",
-                        kernel_initializer='random_uniform')(conv25)
+
+        conv25 = Conv3D(filters=8, kernel_size=(3, 1, 1), strides=(1, 1, 1), padding="same", kernel_initializer='random_uniform')(conv25)
         conv = Concatenate(axis=1)([conv21, conv22, conv23, conv24, conv25])
 
         conv = keras.layers.Add()([conv1, conv])
 
-        conv4 = Conv3D(filters=2, kernel_size=(4, 3, 3), strides=(2, 1, 1), padding="same",
-                       kernel_initializer='random_uniform')(conv)
+        conv4 = Conv3D(filters=2, kernel_size=(4, 3, 3), strides=(2, 1, 1), padding="same", kernel_initializer='random_uniform')(conv)
         conv = keras.layers.Dropout(0.25)(conv4)
 
         outputs.append(conv)
@@ -241,8 +233,7 @@ def MidyNet(c_conf=(6, 2, 14, 30), p_conf=(6, 2, 14, 30), t_conf=(4, 2, 14, 30),
         len_seq, nb_flow, map_height, map_width = p_conf
         input = Input(shape=(nb_flow, len_seq, map_height, map_width))
         main_inputs.append(input)
-        conv = Conv3D(filters=32, kernel_size=(len_seq, 3, 3), strides=(1, 1, 1), padding="same",
-                      kernel_initializer='random_uniform')(input)
+        conv = Conv3D(filters=32, kernel_size=(len_seq, 3, 3), strides=(1, 1, 1), padding="same", kernel_initializer='random_uniform')(input)
         conv1 = Activation("relu")(conv)
         # conv1 = Conv3D(filters=32, kernel_size=(3, 3, 3), strides=(1, 1, 1), padding="same",
         #                kernel_initializer='random_uniform')(conv1)
@@ -254,55 +245,39 @@ def MidyNet(c_conf=(6, 2, 14, 30), p_conf=(6, 2, 14, 30), t_conf=(4, 2, 14, 30),
         conv_5 = keras.layers.Lambda(ftd5)(conv1)
 
         #
-        conv21 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same",
-                        dilation_rate=(1, 1, 1),
-                        kernel_initializer='random_uniform')(conv_1)
+        conv21 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same", dilation_rate=(1, 1, 1), kernel_initializer='random_uniform')(conv_1)
         conv21 = Activation("relu")(conv21)
 
-        conv21 = Conv3D(filters=6, kernel_size=(2, 1, 1), strides=(1, 1, 1), padding="same",
-                        kernel_initializer='random_uniform')(conv21)
+        conv21 = Conv3D(filters=6, kernel_size=(2, 1, 1), strides=(1, 1, 1), padding="same", kernel_initializer='random_uniform')(conv21)
         # conv21 = Activation("relu")(conv21)
 
-        conv22 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same",
-                        dilation_rate=(1, 2, 2),
-                        kernel_initializer='random_uniform')(conv_2)
+        conv22 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same", dilation_rate=(1, 2, 2), kernel_initializer='random_uniform')(conv_2)
         conv22 = Activation("relu")(conv22)
 
-        conv22 = Conv3D(filters=6, kernel_size=(2, 1, 1), strides=(1, 1, 1), padding="same",
-                        kernel_initializer='random_uniform')(conv22)
+        conv22 = Conv3D(filters=6, kernel_size=(2, 1, 1), strides=(1, 1, 1), padding="same", kernel_initializer='random_uniform')(conv22)
         # conv22 = Activation("relu")(conv22)
-        conv23 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same",
-                        dilation_rate=(1, 3, 3),
-                        kernel_initializer='random_uniform')(conv_3)
+        conv23 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same", dilation_rate=(1, 3, 3), kernel_initializer='random_uniform')(conv_3)
         conv23 = Activation("relu")(conv23)
 
         conv23 = Conv3D(filters=6, kernel_size=(2, 1, 1), strides=(1, 1, 1), padding="same",
-
                         kernel_initializer='random_uniform')(conv23)
         # conv23 = Activation("relu")(conv23)
 
-        conv24 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same",
-                        dilation_rate=(1, 4, 4),
-                        kernel_initializer='random_uniform')(conv_4)
+        conv24 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same", dilation_rate=(1, 4, 4), kernel_initializer='random_uniform')(conv_4)
         conv24 = Activation("relu")(conv24)
         #
-        conv24 = Conv3D(filters=6, kernel_size=(3, 1, 1), strides=(1, 1, 1), padding="same",
-                        kernel_initializer='random_uniform')(conv24)
+        conv24 = Conv3D(filters=6, kernel_size=(3, 1, 1), strides=(1, 1, 1), padding="same", kernel_initializer='random_uniform')(conv24)
         # conv24 = Activation("relu")(conv24)
 
-        conv25 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same",
-                        dilation_rate=(1, 5, 5),
-                        kernel_initializer='random_uniform')(conv_5)
+        conv25 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same", dilation_rate=(1, 5, 5), kernel_initializer='random_uniform')(conv_5)
         conv25 = Activation("relu")(conv25)
         #
-        conv25 = Conv3D(filters=8, kernel_size=(3, 1, 1), strides=(1, 1, 1), padding="same",
-                        kernel_initializer='random_uniform')(conv25)
+        conv25 = Conv3D(filters=8, kernel_size=(3, 1, 1), strides=(1, 1, 1), padding="same", kernel_initializer='random_uniform')(conv25)
         conv = Concatenate(axis=1)([conv21, conv22, conv23, conv24, conv25])
 
         conv = keras.layers.Add()([conv1, conv])
 
-        conv4 = Conv3D(filters=2, kernel_size=(1, 3, 3), strides=(2, 1, 1), padding="same",
-                       kernel_initializer='random_uniform')(conv)
+        conv4 = Conv3D(filters=2, kernel_size=(1, 3, 3), strides=(2, 1, 1), padding="same", kernel_initializer='random_uniform')(conv)
         conv = keras.layers.Dropout(0.25)(conv4)
 
         # conv_1 = keras.layers.Lambda(ftd1)(conv1)
@@ -360,7 +335,7 @@ def MidyNet(c_conf=(6, 2, 14, 30), p_conf=(6, 2, 14, 30), t_conf=(4, 2, 14, 30),
         len_seq, nb_flow, map_height, map_width = t_conf
         input = Input(shape=(nb_flow, len_seq, map_height, map_width))
         main_inputs.append(input)
-        conv = Conv3D(filters=32, kernel_size=(len_seq, 3, 3), strides=(1, 1, 1), border_mode="same",
+        conv = Conv3D(filters=32, kernel_size=(len_seq, 3, 3), strides=(1, 1, 1), padding="same",
                       kernel_initializer='random_uniform')(input)
         conv1 = Activation("relu")(conv)
         # conv1 = Conv3D(filters=32, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same",
@@ -375,46 +350,33 @@ def MidyNet(c_conf=(6, 2, 14, 30), p_conf=(6, 2, 14, 30), t_conf=(4, 2, 14, 30),
 
         conv_4 = keras.layers.Lambda(ftd4)(conv1)
 
-        conv21 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same",
-                        dilation_rate=(1, 1, 1),
-                        kernel_initializer='random_uniform')(conv_1)
+        conv21 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same", dilation_rate=(1, 1, 1), kernel_initializer='random_uniform')(conv_1)
         conv21 = Activation("relu")(conv21)
 
-        conv21 = Conv3D(filters=8, kernel_size=(2, 1, 1), strides=(1, 1, 1), padding="same",
-                        kernel_initializer='random_uniform')(conv21)
+        conv21 = Conv3D(filters=8, kernel_size=(2, 1, 1), strides=(1, 1, 1), padding="same", kernel_initializer='random_uniform')(conv21)
         # conv21 = Activation("relu")(conv21)
-        conv22 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same",
-                        dilation_rate=(1, 2, 2),
-                        kernel_initializer='random_uniform')(conv_2)
+        conv22 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same", dilation_rate=(1, 2, 2), kernel_initializer='random_uniform')(conv_2)
         conv22 = Activation("relu")(conv22)
 
-        conv22 = Conv3D(filters=8, kernel_size=(2, 1, 1), strides=(1, 1, 1), padding="same",
-                        kernel_initializer='random_uniform')(conv22)
+        conv22 = Conv3D(filters=8, kernel_size=(2, 1, 1), strides=(1, 1, 1), padding="same", kernel_initializer='random_uniform')(conv22)
         # conv22 = Activation("relu")(conv22)
 
-        conv23 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same",
-                        dilation_rate=(1, 3, 3),
-                        kernel_initializer='random_uniform')(conv_3)
+        conv23 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same", dilation_rate=(1, 3, 3), kernel_initializer='random_uniform')(conv_3)
         conv23 = Activation("relu")(conv23)
 
         conv23 = Conv3D(filters=8, kernel_size=(2, 1, 1), strides=(1, 1, 1), padding="same",
-
                         kernel_initializer='random_uniform')(conv23)
         # conv23 = Activation("relu")(conv23)
-        conv24 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same",
-                        dilation_rate=(1, 4, 4),
-                        kernel_initializer='random_uniform')(conv_4)
+        conv24 = Conv3D(filters=8, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same", dilation_rate=(1, 4, 4), kernel_initializer='random_uniform')(conv_4)
         conv24 = Activation("relu")(conv24)
         #
-        conv24 = Conv3D(filters=8, kernel_size=(3, 1, 1), strides=(1, 1, 1), padding="same",
-                        kernel_initializer='random_uniform')(conv24)
+        conv24 = Conv3D(filters=8, kernel_size=(3, 1, 1), strides=(1, 1, 1), padding="same", kernel_initializer='random_uniform')(conv24)
         # conv24 = Activation("relu")(conv24)
         conv = Concatenate(axis=1)([conv21, conv22, conv23, conv24])
 
         conv = keras.layers.Add()([conv1, conv])
 
-        conv4 = Conv3D(filters=2, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same",
-                       kernel_initializer='random_uniform')(conv)
+        conv4 = Conv3D(filters=2, kernel_size=(1, 3, 3), strides=(1, 1, 1), padding="same", kernel_initializer='random_uniform')(conv)
         conv = keras.layers.Dropout(0.25)(conv4)
 
         outputs.append(conv)
@@ -428,7 +390,7 @@ def MidyNet(c_conf=(6, 2, 14, 30), p_conf=(6, 2, 14, 30), t_conf=(4, 2, 14, 30),
     if len(outputs) == 1:
         main_output = outputs[0]
         main_output = keras.layers.Flatten(data_format='channels_first')(main_output)
-        main_output = Dense(output_dim=2 * map_height * map_width)(main_output)
+        main_output = Dense(units=2 * map_height * map_width)(main_output)
         main_output = Activation('relu')(main_output)
     else:
         # from .iLayer import iLayer
@@ -439,7 +401,7 @@ def MidyNet(c_conf=(6, 2, 14, 30), p_conf=(6, 2, 14, 30), t_conf=(4, 2, 14, 30),
         main_output = keras.layers.Add()(outputs)
         # main_output = Dense(output_dim=2 * map_height * map_width)(main_output)
         main_output = keras.layers.Flatten(data_format='channels_first')(main_output)
-        main_output = Dense(output_dim=2 * map_height * map_width)(main_output)  # Dense(units=2048)
+        main_output = Dense(units=2 * map_height * map_width)(main_output)  # Dense(units=2048)
         main_output = Activation('relu')(main_output)
 
     # main_output = keras.layers.Permute((2, 1, 3, 4))(main_output)
@@ -456,9 +418,9 @@ def MidyNet(c_conf=(6, 2, 14, 30), p_conf=(6, 2, 14, 30), t_conf=(4, 2, 14, 30),
         # external input
         external_input = Input(shape=(external_dim,))
         main_inputs.append(external_input)
-        embedding = Dense(output_dim=10)(external_input)  # Dense(units=10)
+        embedding = Dense(units=10)(external_input)  # Dense(units=10)
         embedding = Activation('relu')(embedding)
-        h1 = Dense(output_dim=2 * map_height * map_width)(embedding)  # Dense(units=2048)
+        h1 = Dense(units=2 * map_height * map_width)(embedding)  # Dense(units=2048)
         external_output = Activation('relu')(h1)
         # external_output = Reshape((2, map_height, map_width))(external_output)
         # main_output = keras.layers.Add()([main_output, external_output])
@@ -481,7 +443,7 @@ def MidyNet(c_conf=(6, 2, 14, 30), p_conf=(6, 2, 14, 30), t_conf=(4, 2, 14, 30),
     # if mask.shape[0] != 0:
     #   conv = Lambda(lambda el: el * mask)(conv)
     conv = Activation('relu')(conv)
-    model = Model(input=main_inputs, output=conv)
+    model = Model(inputs=main_inputs, outputs=conv)
 
     return model
 

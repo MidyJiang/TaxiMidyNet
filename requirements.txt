@@ -1,0 +1,12 @@
+pydot
+matplotlib
+visualkeras
+pandas
+scikit-learn
+graphviz
+pydotplus
+
+
+tensorflow==
+pytorch==
+keras==

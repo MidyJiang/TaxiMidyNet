@@ -127,7 +127,7 @@ def string2timestamp(strings, T=48 * 3):  # 日期字符串转时间戳pd.Timest
 
 class STMatrix(object):  # 用于实现时空序列数据的格式化,存储和管理
 
-    def __init__(self, data, timestamps, T=48, CheckComplete=True):
+    def __init__(self, data, timestamps, T=144, CheckComplete=True):
         """
         data：时间序列数据，类型为numpy array格式
         timestamps：时间序列，类型为字符串格式

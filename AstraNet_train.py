@@ -1,19 +1,17 @@
-import visualkeras
-
-from Mail import sendmailqq
-
-
-def MidyNet_run(**training_config):
+def AstraNet_run(**training_config):
     import pickle
     import subprocess
     import sys, time, os
+    os.environ["PATH"] += os.pathsep + r"C:\Program Files\Graphviz\bin"
     import numpy as np
     import json
-
+    import visualkeras
+    from Mail import sendmailqq
     from keras.optimizers import Adam
     from keras.utils import plot_model
+    # from tensorflow.keras.utils import plot_model
     from sklearn.metrics import r2_score
-    from MidyNet import MidyNet
+    from AstraNet import AstraNet
     from utils import compute
     check_start_stamp = time.time()
     exp_count = training_config['exp_count']
@@ -51,8 +49,7 @@ def MidyNet_run(**training_config):
     for p in cs:
         consider_external_info = p
         filename = 'TaxiPT_c%d_p%d_t%d' % (len_closeness, len_period, len_trend)
-        hyperparams_name = 'TaxiPT_ep%d_C%d_P%d_T%d_L%d_bs%d_lr%.1e' % (nb_epoch, len_closeness, len_period, len_trend,
-                                                                        nb_residual_unit, batch_size, lr)
+        hyperparams_name = 'TaxiPT_ep%d_C%d_P%d_T%d_L%d_bs%d_lr%.1e' % (nb_epoch, len_closeness, len_period, len_trend, nb_residual_unit, batch_size, lr)
         T = slot_num  # number of time intervals in one day
         nb_flow = 2  # there are two types of flows: new-flow and end-flow
         days_test = days_test  # 预测时长4星期28天divide data into two subsets: Train & Test, of which the test set is the last 4 weeks
@@ -85,6 +82,7 @@ def MidyNet_run(**training_config):
         Y_test = pickle.load(f)
         mmn = pickle.load(f)
         external_dim = pickle.load(f)
+        print(86, 'extenral dim=', external_dim)
 
         timestamp_train = pickle.load(f)
         timestamp_test = pickle.load(f)
@@ -99,12 +97,14 @@ def MidyNet_run(**training_config):
         t_conf = (len_trend, nb_flow, map_height, map_width) if len_trend > 0 else None
 
         # 定义模型
-        model = MidyNet(c_conf=c_conf, p_conf=p_conf, t_conf=t_conf, external_dim=external_dim,
-                        nb_residual_unit=nb_residual_unit)
+        model = AstraNet(c_conf=c_conf, p_conf=p_conf, t_conf=t_conf, external_dim=external_dim,
+                         nb_residual_unit=nb_residual_unit)
 
     # 绘制模型结构图(3D)
-    visualkeras.layered_view(model)
+    # visualkeras.layered_view(model)
+    print(106, "model summary replacing visualkeras...hidden.")
 
+    # model.summary()
     def paint_history0():
         import matplotlib.pyplot as plt
         plt.rcParams['font.sans-serif'] = ['SimHei']  # 中文黑体
@@ -291,15 +291,23 @@ def MidyNet_run(**training_config):
         return
 
     # 模型结构图(2D)
-    plot_model(model, to_file=os.path.join(expdir, 'PTmodel.pdf'), show_shapes=0, dpi=500)
-    print(295, "model structured. checking pics.")
+    os.environ["PATH"] += os.pathsep + r"C:\Program Files\Graphviz\bin"
+    try:
+        plot_model(model, to_file=os.path.join(expdir, 'PTmodel.png'), show_shapes=True,  # 显示每层的输出形状
+                   show_dtype=False,  # 不显示数据类型
+                   show_layer_names=True,  # 显示层名称
+                   rankdir='TB',  # 从上到下排列（TB=Top to Bottom）
+                   dpi=500, )
+        print(295, "model structured. checking pics.")
+    except:
+        print("plot_model failed. skip plotting and go on...")
     from keras.callbacks import ModelCheckpoint
 
     if not os.path.exists(os.path.join(expdir, hyperparams_name)): os.makedirs(os.path.join(expdir, hyperparams_name))
     fname_param = os.path.join(expdir, hyperparams_name + '/best.h5')
 
     # 编译网络模型
-    adam = Adam(lr=lr)
+    adam = Adam(learning_rate=lr)
     model.compile(loss='mae', optimizer=adam, metrics=['mse'])
     # model_checkpoint = ModelCheckpoint(fname_param, monitor='loss', verbose=1, save_best_only=True, mode='min')
     print(149, '保存于', fname_param)
@@ -358,7 +366,7 @@ def MidyNet_run(**training_config):
     print('=' * 10)
     print("cont fine-tuning training model...")
     start_time = time.time()
-    adam = Adam(lr=0.1 * lr)
+    adam = Adam(learning_rate=0.1 * lr)
     k = r2_score([1, 2], [4, 5])
     model.compile(loss='mae', optimizer=adam, metrics=['mse'])  # finetune的指标设定
     model.load_weights(fname_param)
@@ -425,16 +433,16 @@ def MidyNet_run(**training_config):
     #
     #
 
-    for iday in range(days_test):  # 预测多少天，previously设定了1周7天。
-        # iday=0   #预测一天，试验
-        pred = model.predict_on_batch(X_test)[iday * slot_num:(iday + 1) * slot_num]
-        groundtruth = Y_test[iday * slot_num:(iday + 1) * slot_num]
-        print('完整预测结果的尺寸', model.predict_on_batch(X_test).shape, iday, 'pred shape:', pred.shape,
-              'gr_truth shape:', groundtruth.shape)
-
-        if not os.path.exists(r'result/{}'.format(hyperparams_name)): os.mkdir('result/{}'.format(hyperparams_name))
-        np.save('result/{}/pred_day'.format(hyperparams_name) + str(iday).zfill(2) + '.npy', pred)
-        np.save('result/{}/groundtruth_day'.format(hyperparams_name) + str(iday).zfill(2) + '.npy', groundtruth)
+    # for iday in range(days_test):  # 预测多少天，previously设定了1周7天。
+    iday = 0  # 预测一天，试验
+    pred = model.predict_on_batch(X_test)[iday * slot_num:(iday + 1) * slot_num]
+    groundtruth = Y_test[iday * slot_num:(iday + 1) * slot_num]
+    print('完整预测结果的尺寸', model.predict_on_batch(X_test).shape, iday, 'pred shape:', pred.shape,
+          'gr_truth shape:', groundtruth.shape)
+    if not os.path.exists(r'result'):          os.makedirs(r'result')
+    if not os.path.exists(r'result/{}'.format(hyperparams_name)): os.mkdir('result/{}'.format(hyperparams_name))
+    np.save('result/{}/pred_day'.format(hyperparams_name) + str(iday).zfill(2) + '.npy', pred)
+    np.save('result/{}/groundtruth_day'.format(hyperparams_name) + str(iday).zfill(2) + '.npy', groundtruth)
 
     # file.close()  # 关闭output输出流文件
     sys.stdout = savedStdout  # 恢复默认输出流
@@ -445,7 +453,7 @@ def MidyNet_run(**training_config):
     sendmailqq('782568799@qq.com', check_start_stamp, hyperparams_name=hyperparams_name,
                nb_epoch=nb_epoch, finetune_epoch=finetune_epoch, exp_count=exp_count,
                mse=fine_mse, mae=fine_mae, mape=fine_mape, r2=fine_r2,
-               title='MidyNet[{}]{}:Epoch={}+{}_MSE={:.6f}_MAE={:.6f}_MAPE={:.6f}%_r2={:.6f}%'.format(
+               title='AstraNet[{}]{}:Epoch={}+{}_MSE={:.6f}_MAE={:.6f}_MAPE={:.6f}%_r2={:.6f}%'.format(
                    str(exp_count).zfill(5),
                    hyperparams_name, nb_epoch, finetune_epoch,
                    fine_mse, fine_mae, 100 * fine_mape, 100 * fine_r2),

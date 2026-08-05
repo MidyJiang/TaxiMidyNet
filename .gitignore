@@ -6,6 +6,11 @@ __pycache__/
 # C extensions
 *.so
 
+# folders
+data/
+experiment/
+result/
+
 # Distribution / packaging
 .Python
 build/
@@ -187,7 +192,6 @@ cython_debug/
 #   and can be added to the global gitignore or merged into this file.  For a more nuclear
 #   option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
-data/
 
 # Abstra
 #   Abstra is an AI-powered process automation framework.

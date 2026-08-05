@@ -17,7 +17,7 @@ configs = sys.argv[1]
 training_config = json.loads(configs)
 print('prep 11:training_config', training_config)
 start, end = 1372636800, 1404172800
-slot_num = int(24 * 3600 / 600)  # 一天被划分成这么多个slot
+slot_num = int(24 * 3600 / 600)  # 一天被划分成这么多个slot(T=144)
 dir = os.getcwd()
 
 
